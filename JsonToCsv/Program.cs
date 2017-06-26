@@ -13,7 +13,7 @@
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Enter JSON directory path, if skipped will use current directory");
+            Console.WriteLine("Enter JSON directory path, if skipped will use current directory:");
             string jsonDirectoryPath = Console.ReadLine();
             if (string.IsNullOrEmpty(jsonDirectoryPath) || jsonDirectoryPath.Equals("."))
             {
@@ -26,16 +26,19 @@
                 return;
             }
 
-            Console.WriteLine("Enter delimiter (if ignored, comma is used)");
+            Console.WriteLine();
+            Console.WriteLine("Enter delimiter (if ignored, comma is used):");
             string firstDelimiter = Console.ReadLine();
             if (string.IsNullOrEmpty(firstDelimiter))
             {
                 firstDelimiter = ",";
             }
 
+            Console.WriteLine();
             Console.WriteLine("Enter second delimiter (optional). If your data contains characters like the first delimiter, use the second one");
             string secondDelimiter = Console.ReadLine();
 
+            Console.WriteLine();
             Console.WriteLine("Enter the comma separated header for the file:");
             string header = Console.ReadLine();
             if (string.IsNullOrEmpty(header))
@@ -43,12 +46,35 @@
                 Console.WriteLine("No data input to fetch");
                 return;
             }
+
+            Console.WriteLine();
             Console.WriteLine("Do you need counts only on enumerables (Y/N)?");
             string answer = Console.ReadLine();
             if (answer == "Y" || answer == "y")
             {
                 countsOnly = true;
             }
+
+            Console.WriteLine();
+            Console.WriteLine("Enter batch size for each file, (no batches by default):");
+            string batchSizeString = Console.ReadLine();
+            int batchSize;
+            if (int.TryParse(batchSizeString, out batchSize))
+            {
+                if (batchSize <= 0)
+                {
+                    Console.WriteLine("Batch size should be positive");
+                    return;
+                }
+            }
+
+            batchSize = -1;
+
+            foreach (string s in Directory.GetFiles(jsonDirectoryPath, "j_results*"))
+            {
+                File.Delete(s);
+            }
+
             string[] headerInOrder = header.Split(',');
             Dictionary<string, List<int>> headerToIndexesMap = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headerInOrder.Length; i++)
@@ -65,8 +91,10 @@
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(string.Join(firstDelimiter, headerInOrder));
+            int currentFileNumber = 0;
             foreach (string fullName in Directory.GetFiles(jsonDirectoryPath, "*.json"))
             {
+                currentFileNumber++;
                 try
                 {
                     BsonDocument document = BsonDocument.Parse(File.ReadAllText(fullName));
@@ -91,9 +119,45 @@
                 {
                     Console.WriteLine("Could not parse file " + fullName);
                 }
+
+                if (batchSize > 0)
+                {
+                    if (currentFileNumber % batchSize == 0)
+                    {
+                        int q = currentFileNumber / batchSize;
+                        File.WriteAllText("j_results_" + q + ".txt" , sb.ToString());
+                        sb.Clear();
+                    }
+                }
+            }
+            if (sb.Length > 0)
+            {
+                File.WriteAllText("j_results_final.txt", sb.ToString());
             }
 
-            File.WriteAllText("results.txt", sb.ToString());
+            string currentDirectory = Directory.GetCurrentDirectory();
+            List<FileInfo> fileInfos = Directory.GetFiles(currentDirectory, "j_results*.txt")
+                .Select(f => new FileInfo(f)).ToList();
+            fileInfos.Sort(new FileInfoComparer());
+            StreamWriter sw = new StreamWriter("results.txt", false);
+            foreach (FileInfo fInfo in fileInfos)
+            {
+                using (FileStream fs = new FileStream(fInfo.FullName, FileMode.Open, FileAccess.Read))
+                {
+                    using (StreamReader sr = new StreamReader(fs))
+                    {
+                        while (!sr.EndOfStream)
+                        {
+                            sw.WriteLine(sr.ReadLine());
+                        }
+                    }
+
+                    sw.Flush();
+                }
+            }
+
+            sw.Flush();
+
             Console.WriteLine();
             Console.WriteLine("Results are written to results.txt");
             Console.WriteLine();
@@ -131,6 +195,18 @@
                     }
                 }
             }
+        }
+    }
+
+    public class FileInfoComparer : IComparer<FileInfo>
+    {
+        public int Compare(FileInfo x, FileInfo y)
+        {
+            if (x == null || y == null)
+            {
+                throw new ArgumentNullException();
+            }
+            return x.LastWriteTimeUtc.CompareTo(y.LastWriteTimeUtc);
         }
     }
 }
