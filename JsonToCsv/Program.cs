@@ -1,4 +1,4 @@
-﻿namespace JsonToCsv
+namespace JsonToCsv
 {
     using System;
     using System.Collections.Generic;
@@ -6,7 +6,7 @@
     using System.Linq;
     using System.Text;
     using MongoDB.Bson;
- 
+
     class Program
     {
         private static bool countsOnly = false;
@@ -68,20 +68,24 @@
                 }
             }
 
-            batchSize = -1;
+            if (batchSize <= 0)
+            {
+                batchSize = -1;
+            }
 
             foreach (string s in Directory.GetFiles(jsonDirectoryPath, "j_results*"))
             {
                 File.Delete(s);
             }
 
+            Console.WriteLine("Started processing at " + DateTime.Now);
             string[] headerInOrder = header.Split(',');
             Dictionary<string, List<int>> headerToIndexesMap = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headerInOrder.Length; i++)
             {
                 if (!headerToIndexesMap.ContainsKey(headerInOrder[i]))
                 {
-                    headerToIndexesMap[headerInOrder[i]] = new List<int>(){i};
+                    headerToIndexesMap[headerInOrder[i]] = new List<int>() { i };
                 }
                 else
                 {
@@ -111,7 +115,7 @@
                             sb.Append(firstDelimiter);
                         }
                     }
-                    
+
                     sb.Length = sb.Length - firstDelimiter.Length;
                     sb.AppendLine();
                 }
@@ -124,8 +128,9 @@
                 {
                     if (currentFileNumber % batchSize == 0)
                     {
+                        Console.WriteLine("Finished processing " + currentFileNumber + " files");
                         int q = currentFileNumber / batchSize;
-                        File.WriteAllText("j_results_" + q + ".txt" , sb.ToString());
+                        File.WriteAllText("j_results_" + q + ".txt", sb.ToString());
                         sb.Clear();
                     }
                 }
@@ -160,6 +165,7 @@
 
             Console.WriteLine();
             Console.WriteLine("Results are written to results.txt");
+            Console.WriteLine("Finished processing at " + DateTime.Now);
             Console.WriteLine();
         }
 
@@ -181,7 +187,7 @@
                         value = x.Count().ToString();
                     }
                 }
-                
+
                 if (!string.IsNullOrEmpty(second))
                 {
                     value = value.Replace(first, second);
