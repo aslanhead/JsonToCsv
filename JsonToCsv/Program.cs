@@ -74,11 +74,7 @@ namespace JsonToCsv
             }
             Console.WriteLine("Do you need the fileName on each row (Y/N)?");
             answer = Console.ReadLine();
-            bool fileNameNeeded = false;
-            if (answer == "Y" || answer == "y")
-            {
-                fileNameNeeded = true;
-            }
+            bool fileNameNeeded = answer == "Y" || answer == "y";
             foreach (string s in Directory.GetFiles(jsonDirectoryPath, "j_results*"))
             {
                 File.Delete(s);
