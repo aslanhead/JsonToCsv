@@ -72,7 +72,13 @@ namespace JsonToCsv
             {
                 batchSize = -1;
             }
-
+            Console.WriteLine("Do you need the fileName on each row (Y/N)?");
+            answer = Console.ReadLine();
+            bool fileNameNeeded = false;
+            if (answer == "Y" || answer == "y")
+            {
+                fileNameNeeded = true;
+            }
             foreach (string s in Directory.GetFiles(jsonDirectoryPath, "j_results*"))
             {
                 File.Delete(s);
@@ -94,7 +100,13 @@ namespace JsonToCsv
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine(string.Join(firstDelimiter, headerInOrder));
+            string h = string.Empty;
+            if (fileNameNeeded)
+            {
+                h = "FileName" + firstDelimiter;
+            }
+            h += string.Join(firstDelimiter,headerInOrder);
+            sb.AppendLine(h);
             int currentFileNumber = 0;
             foreach (string fullName in Directory.GetFiles(jsonDirectoryPath, "*.json"))
             {
@@ -103,6 +115,7 @@ namespace JsonToCsv
                 {
                     BsonDocument document = BsonDocument.Parse(File.ReadAllText(fullName));
                     var sorted = new SortedDictionary<int, string>();
+                    sb.Append(Path.GetFileName(fullName) + firstDelimiter);
                     Recurse(document, headerToIndexesMap, sorted, firstDelimiter, secondDelimiter);
                     for (int i = 0; i < headerInOrder.Length; i++)
                     {
