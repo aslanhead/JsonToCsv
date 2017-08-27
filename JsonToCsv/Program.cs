@@ -111,7 +111,10 @@ namespace JsonToCsv
                 {
                     BsonDocument document = BsonDocument.Parse(File.ReadAllText(fullName));
                     var sorted = new SortedDictionary<int, string>();
-                    sb.Append(Path.GetFileName(fullName) + firstDelimiter);
+                    if (fileNameNeeded)
+                    {
+                        sb.Append(Path.GetFileName(fullName) + firstDelimiter);
+                    }
                     Recurse(document, headerToIndexesMap, sorted, firstDelimiter, secondDelimiter);
                     for (int i = 0; i < headerInOrder.Length; i++)
                     {
