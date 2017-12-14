@@ -85,6 +85,7 @@ namespace JsonToCsv
             Dictionary<string, List<int>> headerToIndexesMap = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < headerInOrder.Length; i++)
             {
+                headerInOrder[i] = headerInOrder[i].Trim();
                 if (!headerToIndexesMap.ContainsKey(headerInOrder[i]))
                 {
                     headerToIndexesMap[headerInOrder[i]] = new List<int>() { i };
